@@ -17,14 +17,20 @@
 #include <vector>
 #include <regex>
 
+/**
+ * @brief Enum with indexes of the borders
+ */
 enum Borders {
-  Top, Bottom, Left, Right
+  Top, /*!< Top border */
+  Bottom, /*!< Bottom border */
+  Left, /*!< Left border */
+  Right /*!< Right border */
 };
 
 /**
- * Converts a string to lower case
+ * @brief Converts a string to lower case
  *
- * @param s String
+ * @param[in] s String
  *
  * @return String in lower case
  */
@@ -37,11 +43,14 @@ std::string tolower(std::string s) {
 }
 
 /**
- * Splits a line of text into individual strings
+ * @brief Splits a line of text into individual strings
  *
- * @param s String to be split
- * @param delim Character used as delimiter
- * @param elems Vector with individual strings
+ * @details Split a string given a delimiter character,
+ * and put every individual string splitted in a vector
+ *
+ * @param[in] s String to be split
+ * @param[in] delim Character used as delimiter
+ * @param[out] elems Vector with individual strings
  */
 void split(const std::string &s, char delim, std::vector<std::string> &elems) {
   std::stringstream ss(s);
@@ -55,11 +64,19 @@ void split(const std::string &s, char delim, std::vector<std::string> &elems) {
 
 
 /**
- * Extract the data of a text file
+ * @brief Extract the data of a text file
+ *
+ * @details Checks with regex if the contents of the file
+ * matches the expected syntax. If so, extracts the lines
+ * that matches and splits them. \n
+ * Returns true if the file was opened and at least one
+ * line was extracted, returns false in case contrary
+ *
+ * @see split()
  *
  * @param[in] path Path where the file is located
  * @param[out] data e
- * @return
+ * @return boolean value
  */
 bool extractFileData(const std::string path,
     std::vector<std::vector<std::string>>& data) {
@@ -85,8 +102,24 @@ bool extractFileData(const std::string path,
   }
   if (data.size() == 0) return false;
   return true;
-}
+}  // extractFileData
 
+/**
+ * @brief Read a text file with the thermal profile
+ * specifications
+ *
+ * @details Reads a text file with the specification
+ * of a thermal profile and returns a vectors of
+ * temperature in each border of the plaque. \n
+ * Returns true if the file was readed, false
+ * in case contrary.
+ *
+ * @param[in] path Path where the file is located
+ * @param[out] temps Vectors where the data of the
+ * thermal profile is returned
+ *
+ * @return boolean value
+ */
 bool readThermalFile(const std::string path,
     std::vector<std::vector<float>>& temps) {
 

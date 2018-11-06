@@ -1,3 +1,13 @@
+/**
+ * @file Proyecto3.cpp
+ *
+ * @author Juan Pablo Brenes Coto
+ *
+ * @date 30-10-18
+ *
+ * @brief Main file with the terminal interface
+ */
+
 #include <cstdlib>
 #include <string>
 #include <iostream>
@@ -13,10 +23,13 @@
 #include <boost/program_options.hpp>
 #include <boost/type_traits/is_complex.hpp>
 
-//  std::regex expression(
-//      "(top|bottom|left|right)(\\s?)+=(\\s?)+-?[[:digit:]]+(\\s?)+((-?[[:digit:]]+(\\s?)+)?)+");
 
-
+/**
+ * @brief Configuration data entered from the terminal
+ *
+ * @details Struct used to store the all the parameters
+ * received either from terminal or from the text file
+ */
 struct config {
   std::vector<float> topTemp, bottomTemp, leftTemp, rightTemp;
   std::vector<bool> isolated = { 0, 0, 0, 0 };
@@ -28,7 +41,20 @@ struct config {
 };
 
 
-
+/**
+ * @brief Initialize the vector of isolated borders
+ *
+ * @details Sets the vector that specifies which borders
+ * are isolated, according to the specified with the
+ * option "-i" in terminal. \n
+ * Returns true if the string captured with the option
+ * "-i" corresponds to the accepted syntax
+ *
+ * @param[in] borders Borders that are isolated
+ * @param[out] configuration Struct with the parameters
+ *
+ * @return boolean value
+ */
 bool checkIsolatedBorders(std::string borders, config& configuration) {
   std::regex expression("(t)?(b)?(l)?(r)?$");
   if (!std::regex_match(borders, expression)) return false;
@@ -45,9 +71,17 @@ bool checkIsolatedBorders(std::string borders, config& configuration) {
 }
 
 /**
+ * @brief Checks the priority of the options
+ * received from terminal and from the text file
  *
- * @param configuration
- * @param tempsInFile
+ * @details Ensures that the information received
+ * from the terminal about the temperature in each
+ * border of the plaque, have priority over the
+ * temperatures specifies in the text file.
+ *
+ * @param[out] configuration Struct with the parameters
+ * @param[in] tempsInFile Vector of temperatures in the
+ * borders, extracted from the text file.
  */
 void checkPriority(config& configuration,
     std::vector<std::vector<float>> tempsInFile) {
@@ -74,6 +108,7 @@ void checkPriority(config& configuration,
     else configuration.rightTemp = tempsInFile[Right];
   }
 }
+
 
 void callLiebmann(config& configuration) {
 
