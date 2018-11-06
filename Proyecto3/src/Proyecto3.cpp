@@ -6,15 +6,16 @@
 #include <vector>
 #include <regex>
 
+#include "../include/AnpiConfig.hpp"
+#include "../include/libmann.cpp"
+#include "FileParser.cpp"
+
 #include <boost/program_options.hpp>
 #include <boost/type_traits/is_complex.hpp>
 
 //  std::regex expression(
 //      "(top|bottom|left|right)(\\s?)+=(\\s?)+-?[[:digit:]]+(\\s?)+((-?[[:digit:]]+(\\s?)+)?)+");
 
-enum Borders {
-  Top, Bottom, Left, Right
-};
 
 struct config {
   std::vector<float> topTemp, bottomTemp, leftTemp, rightTemp;
@@ -26,82 +27,7 @@ struct config {
   float thermalConductivity;
 };
 
-/// Convert the given string to lowercase
-std::string tolower(std::string s) {
-  std::transform(s.begin(), s.end(), s.begin(),
-      [](unsigned char c) -> unsigned char {
-        return std::tolower(c);
-      });
-  return s;
-}
 
-void split(const std::string &s, char delim, std::vector<std::string> &elems) {
-  std::stringstream ss(s);
-  std::string item;
-  while (std::getline(ss, item, delim)) {
-    if (item.length() > 0) {
-      elems.push_back(item);
-    }
-  }
-}
-
-bool extractFileData(const std::string path,
-    std::vector<std::vector<std::string>>& data) {
-  std::ifstream file;
-  file.open(path);
-  if (!file) {
-    std::cout << "File not open" << std::endl;
-    return false;
-  }
-  std::string regExp =
-      "(top|bottom|left|right)(\\s?)+=(\\s?)+"
-      "-?[[:digit:]]+(\\s?)+((-?[[:digit:]]+(\\s?)+)?)+";
-  std::regex expression(regExp);
-
-  while (!file.eof()) {
-    std::string line;
-    std::getline(file, line);
-    if (line.empty()) continue;
-    line = tolower(line);
-    if (!std::regex_match(line, expression)) continue;
-    std::vector<std::string> elems;
-    split(line, ' ', elems);
-    data.push_back(elems);
-  }
-  if (data.size() == 0) return false;
-  return true;
-}
-
-bool readThermalFile(const std::string path,
-    std::vector<std::vector<float>>& temps) {
-
-  std::vector<std::vector<std::string>> lines;
-  if (!extractFileData(path, lines)) {
-    return false;
-  }
-
-  std::vector<bool> borders = { 0, 0, 0, 0 };
-  for (std::size_t i = 0; i < lines.size(); ++i) {
-    std::vector<std::string> line = lines[i];
-    std::vector<float> temperatures;
-
-    for (std::size_t j = 2; j < line.size(); ++j)
-      temperatures.push_back(std::stof(line[j]));
-
-
-    if (lines[i][0] == "top") {
-      temps[Top] = temperatures;
-    }
-    else if (lines[i][0] == "bottom")
-      temps[Bottom] = temperatures;
-    else if (lines[i][0] == "left")
-      temps[Left] = temperatures;
-    else
-      temps[Right] = temperatures;
-  }
-
-  return true;
-}
 
 bool checkIsolatedBorders(std::string borders, config& configuration) {
   std::regex expression("(t)?(b)?(l)?(r)?$");
@@ -118,7 +44,11 @@ bool checkIsolatedBorders(std::string borders, config& configuration) {
   return true;
 }
 
-
+/**
+ *
+ * @param configuration
+ * @param tempsInFile
+ */
 void checkPriority(config& configuration,
     std::vector<std::vector<float>> tempsInFile) {
 
@@ -143,6 +73,27 @@ void checkPriority(config& configuration,
       configuration.isolated[Right] = 1;
     else configuration.rightTemp = tempsInFile[Right];
   }
+}
+
+void callLiebmann(config& configuration) {
+
+  std::chrono::high_resolution_clock::time_point t1 =
+      std::chrono::high_resolution_clock::now();
+
+  ::anpi::Matrix<float> matrix;
+
+  matrix = ::anpi::liebmann(configuration.topTemp, configuration.rightTemp,
+      configuration.bottomTemp, configuration.rightTemp,
+      configuration.solutionSize);
+
+  std::chrono::high_resolution_clock::time_point t2 =
+      std::chrono::high_resolution_clock::now();
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+
+  std::cout << "Duration: " << duration << std::endl;
+
+  //::anpi::printMatrix(matrix);
 }
 
 void printConfig(config configuration) {
@@ -183,9 +134,6 @@ void printConfig(config configuration) {
 }
 
 
-
-namespace bmt = boost::math::tools;
-// for polynomial
 
 namespace po = boost::program_options;
 
@@ -319,7 +267,10 @@ int main(int argc, char *argv[]) {
 
 
     checkPriority(configuration, tempsInFile);
-    printConfig(configuration);
+    //printConfig(configuration);
+
+    callLiebmann(configuration);
+
 
   } catch (po::error& e) {
     std::cerr << "Error:\n  " << e.what() << std::endl << std::endl;
