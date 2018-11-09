@@ -300,7 +300,7 @@ namespace anpi {
     bool converge = false;      // Convergence flag
     int size = 1;               // Initial size of the matrix
 
-    size_t maxCapas = round(log(plaqueSize[0]) / log(2));
+    size_t maxCapas = ceil(log(plaqueSize[0]) / log(2));
 
     matriz.allocate(size + 2, size + 2);
 

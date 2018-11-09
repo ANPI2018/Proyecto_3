@@ -89,22 +89,29 @@ void checkPriority(config& configuration,
   if (configuration.topTemp.size() == 0) {
     if (tempsInFile[Top].size() == 0) {
       configuration.isolated[Top] = 1;
+      configuration.topTemp = {0};
     }
     else configuration.topTemp = tempsInFile[Top];
   }
   if (configuration.bottomTemp.size() == 0) {
-    if (tempsInFile[Bottom].size() == 0)
+    if (tempsInFile[Bottom].size() == 0) {
       configuration.isolated[Bottom] = 1;
+      configuration.bottomTemp = {0};
+    }
     else configuration.bottomTemp = tempsInFile[Bottom];
   }
   if (configuration.leftTemp.size() == 0) {
-    if (tempsInFile[Left].size() == 0)
+    if (tempsInFile[Left].size() == 0) {
       configuration.isolated[Left] = 1;
+      configuration.leftTemp = {0};
+    }
     else configuration.leftTemp = tempsInFile[Left];
   }
   if (configuration.rightTemp.size() == 0) {
-    if (tempsInFile[Right].size() == 0)
+    if (tempsInFile[Right].size() == 0) {
       configuration.isolated[Right] = 1;
+      configuration.rightTemp = {0};
+    }
     else configuration.rightTemp = tempsInFile[Right];
   }
 }
@@ -128,7 +135,7 @@ void callLiebmann(config& configuration) {
 
   std::cout << "Duration: " << duration << std::endl;
 
-  //::anpi::printMatrix(matrix);
+  ::anpi::printMatrix(matrix);
 }
 
 void printConfig(config configuration) {
@@ -232,6 +239,11 @@ int main(int argc, char *argv[]) {
     config configuration;
     std::vector<std::vector<float>> tempsInFile = { { }, { }, { }, { } };
 
+    if (vm.count("thermalProfile")) {
+      std::string filePath = vm["thermalProfile"].as<std::string>();
+      readThermalFile(filePath, tempsInFile);
+    }
+
     if (vm.count("topTemperature")) {
       std::vector<float> top = vm["topTemperature"].as<std::vector<float>>();
       configuration.topTemp = top;
@@ -267,11 +279,6 @@ int main(int argc, char *argv[]) {
 
       if (!checkIsolatedBorders(isolate, configuration))
         throw po::error("Unknown borders specified");
-    }
-
-    if (vm.count("thermalProfile")) {
-      std::string filePath = vm["thermalProfile"].as<std::string>();
-      readThermalFile(filePath, tempsInFile);
     }
 
     if (vm.count("horizontalPix")) {
