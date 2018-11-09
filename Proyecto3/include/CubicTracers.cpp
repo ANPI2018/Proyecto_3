@@ -11,15 +11,15 @@
 #include <vector>
 #include "../include/Matrix.hpp"
 
-/*
-	The steps to calculate the cubic tracers are:
-		1. Calculate the solution vector with the values given by the user.
-		2. Calculate the values of the matrix.
-		3. Apply the Thomas algorithm to solve the system:
-			3.1 Decompose the matrix and recalculate its values.
-			3.2 Apply a forward sustitution of the results values.
-			3.3 Apply a backward sustitution to find the variable values.
-*/
+/**
+ *
+ * @param dataVector
+ * @param size
+ * @brief Método de control general de trazadores cúbicos.
+ * @details Se inicia con la creación de las variables globales a utilizar,
+ * después se llama a los métodos en el orden apropiado.
+ * @author Pablo Bustamante Mora
+ */
 
 template<class T> 
 std::vector<T> trazadores(std::vector<T> dataVector, std::size_t size) {
@@ -53,6 +53,15 @@ std::vector<T> trazadores(std::vector<T> dataVector, std::size_t size) {
 
 }
 
+/**
+ * @brief Método que genera el vector solución del sistema de trazadores cúbicos.
+ * @details Utiliza la fórmula obtenida por el despeje de la integración de segundo
+ * orden de los polinomios de Lagrange.
+ * @param dataVector
+ * @param solutionVector
+ * @param stepSize
+ * @author Pablo Bustamante Mora
+ */
 template<class T> 
 void makeSolutionVector(std::vector<T> dataVector,
 		std::vector<T>& solutionVector, std::size_t stepSize){ //Solution vector of the cubic tracers method.
@@ -61,6 +70,17 @@ void makeSolutionVector(std::vector<T> dataVector,
 							6*((dataVector[i+1]-dataVector[i])/(stepSize));
 }
 
+/**
+ * @brief Método que calcula la matriz tridiagonal del método de trazadores cúbicos.
+ * @details Utiliza los valores de la cantidad de filas y columnas de la matriz para iterar
+ * y poder llenar la matriz. En la diagonal se tiene el doble del tamaño de paso entre dos puntos;
+ * en la diagonal superior e inferior se tiene únicamente el tamaño de paso, y en las otras posiciones
+ * se tiene 0.
+ * @param dataVector
+ * @param matriz
+ * @param solutionVector
+ * @author Pablo Bustamante Mora
+ */
 template<class T> 
 void makeMatrix(anpi::Matrix<T>& matriz, std::size_t stepSize) { //Matrix of the cubic tracerse method.
 	std::size_t maxRows = matriz.size1();
@@ -76,6 +96,13 @@ void makeMatrix(anpi::Matrix<T>& matriz, std::size_t stepSize) { //Matrix of the
 	}
 }
 
+/**
+ * @brief Resuelve una matriz tridiagonal por medio del método de Thomas.
+ * @param matriz
+ * @param variablesVector
+ * @param solutionVector
+ * @author Pablo Bustamante Mora
+ */
 template<class T> 
 void thomas(anpi::Matrix<T>& matriz, std::vector<T> variablesVector,
 			std::vector<T>& solutionVector){
@@ -100,6 +127,19 @@ void thomas(anpi::Matrix<T>& matriz, std::vector<T> variablesVector,
 	variablesVector[0] = (solutionVector[0]-(matriz(0,1)*variablesVector[1]))/matriz(0,0); //First value of the variables vector
 }
 
+/**
+ * @brief Método que calcula la temperatura solicitada.
+ * @details Utiliza el valor a evaluar para determinar cuál polinomio utilizar. Asimismo utiliza
+ * el vector de segundas derivadas, el vector de datos ingresados
+ * y calcula el vector de pasos.
+ * poder determinar
+ * @param value
+ * @param stepSize
+ * @param secondDerivates
+ * @param dataVector
+ * @return valor de la temperatura en cuestión.
+ * @author Pablo Bustamante Mora.
+ */
 template<class T> 
 int calculateTemperature(std::size_t value, std::size_t stepSize,
 		std::vector<T>& secondDerivates, std::vector<T>& dataVector){
@@ -118,7 +158,12 @@ int calculateTemperature(std::size_t value, std::size_t stepSize,
 
 }
 
-// Initiates all the values of a vector to 0.
+/**
+ * @brief Initialices a vector.
+ * @details Sets all the elements of a vector to 0.
+ * @param vector
+ * @author Pablo Bustamante Mora.
+ */
 template<class T> 
 void initialiceVector(std::vector<T>& vector){
 	for (std::size_t i = 0 ; i < vector.size() ; ++i)
