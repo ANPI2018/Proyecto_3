@@ -18,7 +18,11 @@ if (ANPI_ENABLE_OpenMP)
 endif (ANPI_ENABLE_OpenMP)
 
 find_package(OpenCV REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
 
 include_directories (${CMAKE_SOURCE_DIR}/include
-                     ${Boost_INCLUDE_DIR})
+                     ${Boost_INCLUDE_DIR}
+                     ${OPENGL_INCLUDE_DIRS} 
+                     ${GLUT_INCLUDE_DIRS})
 ##                   ${OpenCV_INCLUDE_DIR})
