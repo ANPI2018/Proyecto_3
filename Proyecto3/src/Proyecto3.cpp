@@ -18,11 +18,15 @@
 #include <chrono>
 
 #include "../include/AnpiConfig.hpp"
-#include "../include/liebmann.cpp"
+#include "../include/perfiltermico.cpp"
 #include "FileParser.cpp"
 
 #include <boost/program_options.hpp>
 #include <boost/type_traits/is_complex.hpp>
+#include "../include/liebmann.cpp"
+
+
+typedef std::chrono::high_resolution_clock::time_point Time;
 
 
 /**
@@ -35,10 +39,11 @@ struct config {
   std::vector<float> topTemp, bottomTemp, leftTemp, rightTemp;
   std::vector<bool> isolated = { 0, 0, 0, 0 };
   std::vector<int> solutionSize = { 0, 0 };
-  bool show = 1;
-  bool thermalFlow = 0;
   int thermalFlowSize = 0;
   float thermalConductivity;
+  bool show = 1;
+  bool thermalFlow = 0;
+  bool measureTime = 0;
 };
 
 
@@ -56,17 +61,27 @@ struct config {
  *
  * @return boolean value
  */
-bool checkIsolatedBorders(std::string borders, config& configuration) {
+bool checkIsolatedBorders(std::string borders, config& conf) {
   std::regex expression("(t)?(b)?(l)?(r)?$");
   if (!std::regex_match(borders, expression)) return false;
 
   for (char& c : borders) {
-    if (c == 't') configuration.isolated[Top] = 1;
-    else if (c == 'b')
-      configuration.isolated[Bottom] = 1;
-    else if (c == 'l')
-      configuration.isolated[Left] = 1;
-    else configuration.isolated[Right] = 1;
+    if (c == 't') {
+      conf.isolated[Top] = 1;
+      conf.topTemp = {0};
+    }
+    else if (c == 'b') {
+      conf.isolated[Bottom] = 1;
+      conf.bottomTemp = {0};
+    }
+    else if (c == 'l') {
+      conf.isolated[Left] = 1;
+      conf.leftTemp = {0};
+    }
+    else {
+      conf.isolated[Right] = 1;
+      conf.rightTemp = {0};
+    }
   }
   return true;
 }
@@ -84,59 +99,118 @@ bool checkIsolatedBorders(std::string borders, config& configuration) {
  * @param[in] tempsInFile Vector of temperatures in the
  * borders, extracted from the text file.
  */
-void checkPriority(config& configuration,
+void checkPriority(config& conf,
     std::vector<std::vector<float>> tempsInFile) {
 
-  if (configuration.topTemp.size() == 0) {
+  if (conf.topTemp.size() == 0) {
     if (tempsInFile[Top].size() == 0) {
-      configuration.isolated[Top] = 1;
-      configuration.topTemp = {0};
+    conf.isolated[Top] = 1;
+    conf.topTemp = {0};
     }
-    else configuration.topTemp = tempsInFile[Top];
+    else {
+      if (conf.isolated[Top]) conf.topTemp = {0};
+      else conf.topTemp = tempsInFile[Top];
+    }
   }
-  if (configuration.bottomTemp.size() == 0) {
+  if (conf.bottomTemp.size() == 0) {
     if (tempsInFile[Bottom].size() == 0) {
-      configuration.isolated[Bottom] = 1;
-      configuration.bottomTemp = {0};
+    conf.isolated[Bottom] = 1;
+    conf.bottomTemp = {0};
     }
-    else configuration.bottomTemp = tempsInFile[Bottom];
+    else {
+      if(conf.isolated[Bottom]) conf.bottomTemp = {0};
+      else conf.bottomTemp = tempsInFile[Bottom];
+    }
   }
-  if (configuration.leftTemp.size() == 0) {
+  if (conf.leftTemp.size() == 0) {
     if (tempsInFile[Left].size() == 0) {
-      configuration.isolated[Left] = 1;
-      configuration.leftTemp = {0};
+    conf.isolated[Left] = 1;
+    conf.leftTemp = {0};
     }
-    else configuration.leftTemp = tempsInFile[Left];
+    else {
+      if(conf.isolated[Left]) conf.leftTemp = {0};
+      else conf.leftTemp = tempsInFile[Left];
+    }
   }
-  if (configuration.rightTemp.size() == 0) {
+  if (conf.rightTemp.size() == 0) {
     if (tempsInFile[Right].size() == 0) {
-      configuration.isolated[Right] = 1;
-      configuration.rightTemp = {0};
+    conf.isolated[Right] = 1;
+    conf.rightTemp = {0};
     }
-    else configuration.rightTemp = tempsInFile[Right];
+    else {
+      if(conf.isolated[Right]) conf.rightTemp = {0};
+      else conf.rightTemp = tempsInFile[Right];
+    }
   }
+}
+
+void getMinMax(const config conf, int& min, int& max) {
+
+  auto minMaxT = std::minmax_element(conf.topTemp.begin(), conf.topTemp.end());
+  auto minMaxB = std::minmax_element(conf.bottomTemp.begin(),
+      conf.bottomTemp.end());
+  auto minMaxL = std::minmax_element(conf.leftTemp.begin(),
+      conf.leftTemp.end());
+  auto minMaxR = std::minmax_element(conf.rightTemp.begin(),
+      conf.rightTemp.end());
+
+  std::vector<float> mins = {
+      conf.topTemp[minMaxT.first - conf.topTemp.begin()],
+      conf.bottomTemp[minMaxB.first - conf.bottomTemp.begin()],
+      conf.leftTemp[minMaxL.first - conf.leftTemp.begin()],
+      conf.rightTemp[minMaxR.first - conf.rightTemp.begin()] };
+
+  std::vector<float> maxs = {
+      conf.topTemp[minMaxT.second - conf.topTemp.begin()],
+      conf.bottomTemp[minMaxB.second - conf.bottomTemp.begin()],
+      conf.leftTemp[minMaxL.second - conf.leftTemp.begin()],
+      conf.rightTemp[minMaxR.second - conf.rightTemp.begin()] };
+
+
+
+  auto minIdx = std::min_element(mins.begin(), mins.end());
+  auto maxIdx = std::max_element(maxs.begin(), maxs.end());
+
+  min = mins[std::distance(std::begin(mins), minIdx)];
+  max = maxs[std::distance(std::begin(maxs), maxIdx)];
+
 }
 
 
 void callLiebmann(config& configuration) {
 
-  std::chrono::high_resolution_clock::time_point t1 =
-      std::chrono::high_resolution_clock::now();
-
   ::anpi::Matrix<float> matrix;
 
-  matrix = ::anpi::liebmann(configuration.topTemp, configuration.rightTemp,
-      configuration.bottomTemp, configuration.rightTemp,
-      configuration.solutionSize);
+  if (configuration.measureTime) {
+    Time t1 = std::chrono::high_resolution_clock::now();
 
-  std::chrono::high_resolution_clock::time_point t2 =
-      std::chrono::high_resolution_clock::now();
-  auto duration =
-      std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    matrix = ::anpi::liebmann(configuration.topTemp, configuration.rightTemp,
+        configuration.bottomTemp, configuration.leftTemp,
+        configuration.solutionSize);
 
-  std::cout << "Duration: " << duration << std::endl;
+    Time t2 = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+        t2 - t1).count();
+
+    std::cout << "\n--- Execution time: " << duration << "us" << std::endl;
+  }
+
+  else {
+    matrix = ::anpi::liebmann(configuration.topTemp, configuration.rightTemp,
+        configuration.bottomTemp, configuration.leftTemp,
+        configuration.solutionSize);
+
+    if (configuration.show) {
+      int min, max;
+      getMinMax(configuration, min, max);
+      mostrarPerfil(matrix, min, max);
+    }
+  }
+
 
   ::anpi::printMatrix(matrix);
+  writeFile(matrix);
 }
 
 void printConfig(config configuration) {
@@ -174,15 +248,24 @@ void printConfig(config configuration) {
 
   std::cout << "Thermal conductivity: " << configuration.thermalConductivity
       << std::endl;
+
+  std::cout << "Measure Time: " << configuration.measureTime << std::endl;
+
+
 }
 
 
 
 namespace po = boost::program_options;
 
-////////////////////////////////////////////////////////////////////////////
-//  Main program
-////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Command line interface
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ *
+ * @return program exit state
+ */
 int main(int argc, char *argv[]) {
 
   try {
@@ -223,7 +306,10 @@ int main(int argc, char *argv[]) {
     ("thermalFlow,f", "Activate the visualization of the heat flow")
 
     ("thermalGrid,g", po::value<int>()->default_value(-1),
-        "Size of the grid for the visualization of the heat flow");
+        "Size of the grid for the visualization of the heat flow")
+
+    ("measureTime,m",
+        "Measure the execution time in microseconds");
 
     po::variables_map vm;
 
@@ -284,12 +370,17 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("horizontalPix")) {
       int hSize = vm["horizontalPix"].as<int>();
-      configuration.solutionSize[0] = hSize;
+      if (hSize <= 0)
+        throw po::error("Horizontal dimension has to be greater than 0");
+      else configuration.solutionSize[0] = hSize;
     }
 
     if (vm.count("verticalPix")) {
       int vSize = vm["verticalPix"].as<int>();
-      configuration.solutionSize[1] = vSize;
+      if (vSize <= 0)
+        throw po::error("Vertical dimension has to be greater than 0");
+      else
+        configuration.solutionSize[1] = vSize;
     }
 
     if (vm.count("deactivateVisual")) {
@@ -306,6 +397,10 @@ int main(int argc, char *argv[]) {
               "The size of the grid has to be set, and couldn't be negative or zero");
         configuration.thermalFlowSize = flowSize;
       }
+    }
+
+    if (vm.count("measureTime")) {
+      configuration.measureTime = 1;
     }
 
 
