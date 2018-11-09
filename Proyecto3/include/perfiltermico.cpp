@@ -2,7 +2,7 @@
  * perfiltermico.cpp
  *
  *  Created on: Nov 5, 2018
- *      Author: emi
+ *      Author: Emily Sancho Murillo
  */
 #include <GL/glut.h>
 #include <GL/gl.h>
@@ -11,16 +11,22 @@
 #include <math.h>
 #include "../include/Matrix.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
 using namespace std;
 
+/**
+ * @brief Toma una magnitud y la representa en RGB
+ * @details Dado un valor (punto), determina los valores de R,G y B y los
+ * inserta en el vector de color.
+ * @author Emily Sancho.
+ * @param std::vector<float>& color
+ * @param T punto
+ * @param int min
+ * @param int max
+ */
 template<typename T>
 void CelsiusToRGB(std::vector<float>& color,T punto, int min, int max){
 	color.resize(3);
 	int valor = int((punto*44)/max);
-
 	switch(valor){
 	case 0: color[0]=3.0; color[1]=4.0; color[2]=255.0; break;
 	case 1: color[0]=1.0; color[1]=33.0 ;color[2]=255.0; break;
@@ -70,28 +76,31 @@ void CelsiusToRGB(std::vector<float>& color,T punto, int min, int max){
 	}
 }
 
+/**
+ * @brief Muestra el perfil termico de una matriz en pantalla.
+ * @author Emily Sancho.
+ * @param anpi::Matrix<T>& matrix
+ * @param int min
+ * @param int max
+ *
+ */
 template<typename T>
 void mostrarPerfil(anpi::Matrix<T>& matrix, int min, int max){
-		std::vector<float> color;
+		std::vector<float> color; //almacena los datos RGB del color
 		int alto = matrix.rows();
 		int ancho = matrix.cols();
-
-		int ini =1;
-		char* init[1]={" "};
-
-		glutInit(&ini,init);
-		glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);
-		glutInitWindowSize (ancho+300,alto);
-		glutInitWindowPosition (1000, 100);
-		glutCreateWindow ("Perfil termico");
-		glClearColor(1,1,1,1);
-		glMatrixMode (GL_PROJECTION);
-		gluOrtho2D(0.0, ancho+300, 0.0,alto+2);
-
-
-		glPointSize(2);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glBegin(GL_POINTS);
+		int ini =1;//necesario para iniciar GL
+		char* init[1]={}; //necesario para iniciar GL
+		glutInit(&ini,init); //Inicializa la biblioteca
+		glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB); //Inicializa el modo de visualizacion
+		glutInitWindowSize (ancho+300,alto); //determina el tamaño de la ventana
+		glutInitWindowPosition (1000, 100); //determina la posicion de la ventana
+		glutCreateWindow ("Perfil termico"); //determina el nombre de la ventana
+		glClearColor(1,1,1,1); //limpia el buffer de colores
+		gluOrtho2D(0.0, ancho+300, alto+2,0.0);//crea una matriz de proyeccion de coordenadas
+		glPointSize(2); //tamaño de los puntos
+		glClear(GL_COLOR_BUFFER_BIT); //Limpia el buffer
+		glBegin(GL_POINTS);// inicializa los puntos
 
 		//para graficar la matriz
 		for(size_t i=1; i < matrix.rows()-1;++i)
@@ -110,52 +119,48 @@ void mostrarPerfil(anpi::Matrix<T>& matrix, int min, int max){
 					CelsiusToRGB(color,ii,0,alto*0.81);
 					glColor3ub(color[0],color[1],color[2]);
 					for(size_t j=0;j<75;++j){
-						glVertex2i(j+100+ancho,ii+5);
+						glVertex2i(j+100+ancho,alto-ii-5);
 					}
 				}
 		}
 
-		glEnd();
+		glEnd();//finaliza los puntos
+		glColor3ub(1,1,1); //color para las letras
 
-		glColor3ub(1,1,1);
-
-
-		const unsigned char* text1 = reinterpret_cast<const unsigned char*>("Perfil termico de la placa");
-		glRasterPos2f(ancho+25 ,alto*0.90);
-		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text1);
+		const unsigned char* text1 = reinterpret_cast<const unsigned char*>("Perfil termico de la placa");//conversion del texto
+		glRasterPos2f(ancho+25 ,alto*0.10); //posicion
+		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text1);//pintar el texto
 
 		char t2[8]="";
 		sprintf(t2,"%d",min);
 		const unsigned char* text2 = reinterpret_cast<const unsigned char*>(t2);
-		glRasterPos2f(ancho+185 ,alto*0.01);
+		glRasterPos2f(ancho+185 ,alto*0.99);
 		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text2);
 
 		sprintf(t2,"%d",(max-min)*1/4);
 		text2 = reinterpret_cast<const unsigned char*>(t2);
-		glRasterPos2f(ancho+185 ,alto*0.21);
+		glRasterPos2f(ancho+185 ,alto*0.79);
 		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text2);
 
 		sprintf(t2,"%d",(max-min)/2);
 		text2 = reinterpret_cast<const unsigned char*>(t2);
-		glRasterPos2f(ancho+185 ,alto*0.41);
+		glRasterPos2f(ancho+185 ,alto*0.59);
 		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text2);
 
 
 		sprintf(t2,"%d",(max-min)*3/4);
 		text2 = reinterpret_cast<const unsigned char*>(t2);
-		glRasterPos2f(ancho+185 ,alto*0.61);
+		glRasterPos2f(ancho+185 ,alto*0.39);
 		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text2);
 
 
 		sprintf(t2,"%d",max);
 		text2 = reinterpret_cast<const unsigned char*>(t2);
-		glRasterPos2f(ancho+185 ,alto*0.81);
+		glRasterPos2f(ancho+185 ,alto*0.19);
 		glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,text2);
 
 
-
-
-		glFlush();
-		glutMainLoop();
+		glFlush();//forza la ejecucion de los comandos GL
+		glutMainLoop();//sin esto no procesa las instrucciones
 }
 
