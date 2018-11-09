@@ -1,8 +1,8 @@
-/*
- * trazadores.cpp
- *
- *  Created on: Nov 4, 2018
- *      Author: Pablo
+/**
+ * @author Pablo Bustamante Mora
+ * @brief Method that generates the vector with the temperatures for a specific edge.
+ * @file CubicTracers
+ * 
  */
 
 
@@ -15,8 +15,9 @@
  *
  * @param dataVector
  * @param size
- * @brief Método de control general de trazadores cúbicos.
- * @details Se inicia con la creación de las variables globales a utilizar,
+ * @brief Cubic tracers general control method.
+ * @details Initiates with the creation of the global variables, 
+	then calls the methods in the right order.
  * después se llama a los métodos en el orden apropiado.
  * @author Pablo Bustamante Mora
  */
@@ -47,15 +48,16 @@ std::vector<T> trazadores(std::vector<T> dataVector, std::size_t size) {
 	}
 	std::vector<T> finalTemperatureVector(size);
 	initialiceVector(finalTemperatureVector);
-	for (int i = 0 ; i <= size ; ++i)
+	stepSize = size/(dataVector.size()-1);
+	for (unsigned int i = 0 ; i < size ; ++i)
 		finalTemperatureVector[i] = calculateTemperature(i,stepSize,secondDerivatesComplete, dataVector);
 	return finalTemperatureVector;
 
 }
 
 /**
- * @brief Método que genera el vector solución del sistema de trazadores cúbicos.
- * @details Utiliza la fórmula obtenida por el despeje de la integración de segundo
+ * @brief Generates the solution vector for the cubic tracers system.
+ * @details Uses the formula derived from the integration of second order of the Lagrange polynomials.
  * orden de los polinomios de Lagrange.
  * @param dataVector
  * @param solutionVector
@@ -71,11 +73,10 @@ void makeSolutionVector(std::vector<T> dataVector,
 }
 
 /**
- * @brief Método que calcula la matriz tridiagonal del método de trazadores cúbicos.
- * @details Utiliza los valores de la cantidad de filas y columnas de la matriz para iterar
- * y poder llenar la matriz. En la diagonal se tiene el doble del tamaño de paso entre dos puntos;
- * en la diagonal superior e inferior se tiene únicamente el tamaño de paso, y en las otras posiciones
- * se tiene 0.
+ * @brief Calculates the tridiagonal matrix needed in the cubic tracers method.
+ * @details Uses the amount of rows and columns to iterate and fill the matrix. In the central diagonal 
+		it has the two times the step amount between two points; in the upper and lower diagonal it has the
+		step amount and in the rest of location it has 0.
  * @param dataVector
  * @param matriz
  * @param solutionVector
@@ -97,7 +98,8 @@ void makeMatrix(anpi::Matrix<T>& matriz, std::size_t stepSize) { //Matrix of the
 }
 
 /**
- * @brief Resuelve una matriz tridiagonal por medio del método de Thomas.
+ * @brief Solves a tridiagonal matrix by Thomas's method.
+	 @details Finds the second derivates that are needed in the cubic tracers methdod.
  * @param matriz
  * @param variablesVector
  * @param solutionVector
@@ -128,11 +130,9 @@ void thomas(anpi::Matrix<T>& matriz, std::vector<T> variablesVector,
 }
 
 /**
- * @brief Método que calcula la temperatura solicitada.
- * @details Utiliza el valor a evaluar para determinar cuál polinomio utilizar. Asimismo utiliza
- * el vector de segundas derivadas, el vector de datos ingresados
- * y calcula el vector de pasos.
- * poder determinar
+ * @brief Calculates the temperature needed.
+ * @details First of all, it determines which polynomial has to be used according to the value entered. 
+		it also uses the second derivates and the initial entered data.
  * @param value
  * @param stepSize
  * @param secondDerivates
