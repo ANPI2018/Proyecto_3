@@ -17,6 +17,8 @@
 #include <vector>
 #include <regex>
 
+#include "../include/Matrix.hpp"
+
 /**
  * @brief Enum with indexes of the borders
  */
@@ -147,5 +149,26 @@ bool readThermalFile(const std::string path,
   }
 
   return true;
+}
+
+/**
+ * @brief Creates a file with the resulting heat
+ * distribution data
+ *
+ * @param matrix Matrix result of the Liebmann method
+ */
+template<typename T>
+void writeFile(::anpi::Matrix<T>& matrix) {
+
+  std::ofstream file("Heat_distribution.txt");
+
+  for (size_t i = 0; i < matrix.rows(); ++i) {
+    for (size_t j = 0; j < matrix.cols(); ++j) {
+      file << matrix[i][j] << " ";
+    }
+    file << "\n";
+  }
+
+  file.close();
 }
 
