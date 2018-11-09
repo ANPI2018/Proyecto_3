@@ -38,4 +38,4 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/AnpiConfig.hpp.in ${CMAKE_SOURCE_DIR}/i
 
 add_library(anpi STATIC ${SRCS} ${HEADERS})
 add_executable(${CMAKE_PROJECT_NAME} Proyecto3.cpp)
-target_link_libraries(${CMAKE_PROJECT_NAME} anpi python2.7 ${Boost_LIBRARIES})
+target_link_libraries(${CMAKE_PROJECT_NAME} anpi python2.7 ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
