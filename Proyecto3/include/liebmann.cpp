@@ -13,6 +13,7 @@
 #include <vector>
 #include <math.h>
 #include <boost/math/constants/constants.hpp>
+#include "../include/CubicTracers.cpp"
 
 using namespace std;
 
@@ -23,6 +24,8 @@ const bool OMP = 0;
 #endif
 
 namespace anpi {
+
+enum borders{top, bottom, left, right};
 
 /**
  * @brief Este metodo imprime una matriz en consola
@@ -230,40 +233,93 @@ void bordeSimple(anpi::Matrix<T> &matriz, std::vector<T> &borde, int lado){
  */
 template<typename T>
 void rellenarBorde(anpi::Matrix<T>& matriz,
-		std::vector<T> &top,
-		std::vector<T> &right,
-		std::vector<T> &bottom,
-		std::vector<T> &left){
+		std::vector<T> &Top,
+		std::vector<T> &Right,
+		std::vector<T> &Bottom,
+		std::vector<T> &Left){
+
+		std::vector<T> temperaturesVectorTop(matriz.rows());
+		std::vector<T> temperaturesVectorLeft(matriz.rows());
+		std::vector<T> temperaturesVectorBottom(matriz.rows());
+		std::vector<T> temperaturesVectorRight(matriz.rows());
+
 
 #pragma omp parallel sections if((matriz.rows() >= 512) && OMP)
     {
 
 #pragma omp section
       {
-        if (top.size() < 3) {
-          bordeSimple(matriz, top, 1);
+        if (Top.size() < 3) {
+          bordeSimple(matriz, Top, 1);
         }
+				else{
+					temperaturesVectorTop = trazadores(Top, matriz.rows());
+					rellenarBordeTrazador(matriz,top,temperaturesVectorTop);
+				}
       }
 #pragma omp section
       {
-        if (left.size() < 3) {
-          bordeSimple(matriz, left, 2);
+        if (Left.size() < 3) {
+          bordeSimple(matriz, Left, 2);
         }
+				else{
+					temperaturesVectorLeft = trazadores(Left, matriz.rows());
+					rellenarBordeTrazador(matriz,left,temperaturesVectorLeft);
+				}
       }
 #pragma omp section
       {
-        if (right.size() < 3) {
-          bordeSimple(matriz, right, 3);
+        if (Right.size() < 3) {
+          bordeSimple(matriz, Right, 3);
         }
+				else{
+					temperaturesVectorRight = trazadores(Right, matriz.rows());
+					rellenarBordeTrazador(matriz,right,temperaturesVectorRight);
+				}
       }
 #pragma omp section
       {
-        if (bottom.size() < 3) {
-          bordeSimple(matriz, bottom, 4);
+        if (Bottom.size() < 3) {
+          bordeSimple(matriz, Bottom, 4);
         }
+				else{
+					temperaturesVectorBottom = trazadores(Bottom, matriz.rows());
+					rellenarBordeTrazador(matriz,bottom,temperaturesVectorBottom);
+				}
       }
     }
   }
+
+/**
+ * @brief Toma matriz y copia el valor de cada una de sus celdas en 4 celdas de la newmatriz
+ * @details Cada vez que el metodo de Libman calcula una capa inferior de la placa, cada celda la capa
+ * se duplica en 4 celdas de la nueva capa, este metodo se encarga de implementar este comportamiento.
+ * @author Pablo Bustamante Mora.
+ * @param matriz
+ * @param border
+ * @param temperatureVector
+ */
+template<typename T>
+void rellenarBordeTrazador(anpi::Matrix<T>& matriz, int border, std::vector<T> temperatureVector){
+
+	if(border == (top)){
+		for(std::size_t j = 0 ; j < matriz.rows() ; ++j)
+			matriz[0][j] = temperatureVector[j];
+	}
+	else if(border == (left)){
+		for(std::size_t i = 0 ; i < matriz.rows() ; ++i)
+			matriz[i][0] = temperatureVector[i];
+	}
+	else if(border == (bottom)){
+		for(std::size_t j = 0 ; j < matriz.rows() ; ++j)
+			matriz[matriz.cols()-1][j] = temperatureVector[j];
+	}
+	else{
+		for(std::size_t i = 0 ; i < matriz.rows() ; ++i)
+					matriz[i][matriz.rows()-1] = temperatureVector[i];
+	}
+
+}
 
 /**
  * @brief Toma matriz y copia el valor de cada una de sus celdas en 4 celdas de la newmatriz

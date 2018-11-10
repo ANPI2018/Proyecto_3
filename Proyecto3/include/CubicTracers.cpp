@@ -12,50 +12,6 @@
 #include "../include/Matrix.hpp"
 
 /**
- *
- * @param dataVector
- * @param size
- * @brief Cubic tracers general control method.
- * @details Initiates with the creation of the global variables, 
-	then calls the methods in the right order.
- * después se llama a los métodos en el orden apropiado.
- * @author Pablo Bustamante Mora
- */
-
-template<class T> 
-std::vector<T> trazadores(std::vector<T> dataVector, std::size_t size) {
-
-	std::size_t stepSize = size/dataVector.size(); //The distance between the Xs.
-	std::size_t newSize = dataVector.size();
-	std::vector<T> solutionVector(newSize-2); //Until x3.
-	std::vector<T> secondDerivatesVector(newSize-2); //Without the first and last second derivates.
-	std::vector<T> secondDerivatesComplete(newSize); //[0,secondDerivatesVector,0]
-	anpi::Matrix<T> tridiagonalMatrix[newSize-1][newSize-1];
-
-
-	initialiceVector(solutionVector);
-	initialiceVector(secondDerivatesVector);
-	makeSolutionVector(dataVector, solutionVector, stepSize);
-	makeMatrix(tridiagonalMatrix, stepSize);
-
-	thomas(tridiagonalMatrix,secondDerivatesVector,solutionVector);
-
-	for (std::size_t i = 0 ; i < secondDerivatesComplete.size() ; ++i){ //Adds the first and second derivates. =0.
-		if (i == 0 || i == secondDerivatesComplete.size() -1)
-			secondDerivatesComplete[i] = 0;
-		else
-			secondDerivatesComplete[i] = secondDerivatesVector[i-1];
-	}
-	std::vector<T> finalTemperatureVector(size);
-	initialiceVector(finalTemperatureVector);
-	stepSize = size/(dataVector.size()-1);
-	for (unsigned int i = 0 ; i < size ; ++i)
-		finalTemperatureVector[i] = calculateTemperature(i,stepSize,secondDerivatesComplete, dataVector);
-	return finalTemperatureVector;
-
-}
-
-/**
  * @brief Generates the solution vector for the cubic tracers system.
  * @details Uses the formula derived from the integration of second order of the Lagrange polynomials.
  * orden de los polinomios de Lagrange.
@@ -73,6 +29,18 @@ void makeSolutionVector(std::vector<T> dataVector,
 }
 
 /**
+ * @brief Initialices a vector.
+ * @details Sets all the elements of a vector to 0.
+ * @param vector
+ * @author Pablo Bustamante Mora.
+ */
+template<class T> 
+void initialiceVector(std::vector<T>& vector){
+	for (std::size_t i = 0 ; i < vector.size() ; ++i)
+		vector[i] = T(0);
+}
+
+/**
  * @brief Calculates the tridiagonal matrix needed in the cubic tracers method.
  * @details Uses the amount of rows and columns to iterate and fill the matrix. In the central diagonal 
 		it has the two times the step amount between two points; in the upper and lower diagonal it has the
@@ -84,8 +52,8 @@ void makeSolutionVector(std::vector<T> dataVector,
  */
 template<class T> 
 void makeMatrix(anpi::Matrix<T>& matriz, std::size_t stepSize) { //Matrix of the cubic tracerse method.
-	std::size_t maxRows = matriz.size1();
-	std::size_t maxCols = matriz.size2();
+	std::size_t maxRows = matriz.rows();
+	std::size_t maxCols = matriz.cols();
 	for(std::size_t i = 0 ; i < maxRows ; ++i){
 		for (std::size_t j = 0 ; j < maxCols; ++j){
 			if(j == i-1 || j == i+1) {matriz[i][j] = stepSize;} //(xi-x(i-1))
@@ -159,15 +127,46 @@ int calculateTemperature(std::size_t value, std::size_t stepSize,
 }
 
 /**
- * @brief Initialices a vector.
- * @details Sets all the elements of a vector to 0.
- * @param vector
- * @author Pablo Bustamante Mora.
+ *
+ * @param dataVector
+ * @param size
+ * @brief Cubic tracers general control method.
+ * @details Initiates with the creation of the global variables, 
+	then calls the methods in the right order.
+ * después se llama a los métodos en el orden apropiado.
+ * @author Pablo Bustamante Mora
  */
+
 template<class T> 
-void initialiceVector(std::vector<T>& vector){
-	for (std::size_t i = 0 ; i < vector.size() ; ++i)
-		vector[i] = T(0);
+std::vector<T> trazadores(std::vector<T> dataVector, std::size_t size) {
+
+	std::size_t stepSize = size/dataVector.size(); //The distance between the Xs.
+	std::size_t newSize = dataVector.size();
+	std::vector<T> solutionVector(newSize-2); //Until x3.
+	std::vector<T> secondDerivatesVector(newSize-2); //Without the first and last second derivates.
+	std::vector<T> secondDerivatesComplete(newSize); //[0,secondDerivatesVector,0]
+	anpi::Matrix<T> tridiagonalMatrix;
+	tridiagonalMatrix.allocate(newSize-1,newSize-1);
+
+
+	initialiceVector(solutionVector);
+	initialiceVector(secondDerivatesVector);
+	makeSolutionVector(dataVector, solutionVector, stepSize);
+	makeMatrix(tridiagonalMatrix, stepSize);
+
+	thomas(tridiagonalMatrix,secondDerivatesVector,solutionVector);
+
+	for (std::size_t i = 0 ; i < secondDerivatesComplete.size() ; ++i){ //Adds the first and second derivates. =0.
+		if (i == 0 || i == secondDerivatesComplete.size() -1)
+			secondDerivatesComplete[i] = 0;
+		else
+			secondDerivatesComplete[i] = secondDerivatesVector[i-1];
+	}
+	std::vector<T> finalTemperatureVector(size);
+	initialiceVector(finalTemperatureVector);
+	stepSize = size/(dataVector.size()-1);
+	for (unsigned int i = 0 ; i < size ; ++i)
+		finalTemperatureVector[i] = calculateTemperature(i,stepSize,secondDerivatesComplete, dataVector);
+	return finalTemperatureVector;
+
 }
-
-
