@@ -25,7 +25,6 @@
 #include <boost/type_traits/is_complex.hpp>
 #include "../include/liebmann.cpp"
 
-
 typedef std::chrono::high_resolution_clock::time_point Time;
 
 
@@ -53,37 +52,25 @@ struct config {
  * @details Sets the vector that specifies which borders
  * are isolated, according to the specified with the
  * option "-i" in terminal. \n
- * Returns true if the string captured with the option
- * "-i" corresponds to the accepted syntax
  *
  * @param[in] borders Borders that are isolated
- * @param[out] configuration Struct with the parameters
+ * @param[out] conf Struct with the parameters
  *
- * @return boolean value
  */
-bool checkIsolatedBorders(std::string borders, config& conf) {
-  std::regex expression("(t)?(b)?(l)?(r)?$");
-  if (!std::regex_match(borders, expression)) return false;
+void checkIsolatedBorders(std::string borders, config& conf) {
 
   for (char& c : borders) {
-    if (c == 't') {
-      conf.isolated[Top] = 1;
-      conf.topTemp = {0};
-    }
-    else if (c == 'b') {
-      conf.isolated[Bottom] = 1;
-      conf.bottomTemp = {0};
-    }
-    else if (c == 'l') {
-      conf.isolated[Left] = 1;
-      conf.leftTemp = {0};
-    }
-    else {
-      conf.isolated[Right] = 1;
-      conf.rightTemp = {0};
+    switch (c) {
+      case 't':
+        conf.isolated[Top] = 1;
+        conf.topTemp = {0}; break;
+      case 'b' : conf.isolated[Bottom] = 1; conf.bottomTemp = {0}; break;
+      case 'l' : conf.isolated[Left] = 1; conf.leftTemp = {0}; break;
+      case 'r' : conf.isolated[Right] = 1; conf.rightTemp = {0}; break;
+        default : std::cout << "Unknown border: '" << c << "' ignored in command \"-i\"\n" <<
+        "Borders are: 't' -> Top 'b' -> Bottom 'l' -> Left 'r' -> Right"<< std::endl;
     }
   }
-  return true;
 }
 
 /**
@@ -95,12 +82,11 @@ bool checkIsolatedBorders(std::string borders, config& conf) {
  * border of the plaque, have priority over the
  * temperatures specifies in the text file.
  *
- * @param[out] configuration Struct with the parameters
+   * @param[out] conf Struct with the parameters
  * @param[in] tempsInFile Vector of temperatures in the
  * borders, extracted from the text file.
  */
-void checkPriority(config& conf,
-    std::vector<std::vector<float>> tempsInFile) {
+void checkPriority(config& conf, std::vector<std::vector<float>> tempsInFile) {
 
   if (conf.topTemp.size() == 0) {
     if (tempsInFile[Top].size() == 0) {
@@ -144,6 +130,13 @@ void checkPriority(config& conf,
   }
 }
 
+/**
+ * @brief Obtains the minimum and maximum values of 4 vectors
+ *
+ * @param[in] conf Struct that holds the vectors
+ * @param[out] min Value with minimum
+ * @param[out] max Value with maximum
+ */
 void getMinMax(const config conf, int& min, int& max) {
 
   auto minMaxT = std::minmax_element(conf.topTemp.begin(), conf.topTemp.end());
@@ -166,8 +159,6 @@ void getMinMax(const config conf, int& min, int& max) {
       conf.leftTemp[minMaxL.second - conf.leftTemp.begin()],
       conf.rightTemp[minMaxR.second - conf.rightTemp.begin()] };
 
-
-
   auto minIdx = std::min_element(mins.begin(), mins.end());
   auto maxIdx = std::max_element(maxs.begin(), maxs.end());
 
@@ -176,7 +167,20 @@ void getMinMax(const config conf, int& min, int& max) {
 
 }
 
-
+/**
+ * @brief Call the Liebmann method with the configuration given
+ * in the terminal
+ *
+ * @details Call the Liebmann method to obtain the heat distribution
+ * in the plaque. \n If the flag to measure the execution time is on,
+ * the Liebmann algorithm will be executed but no results will be shown,
+ * only prints the execution time in terminal. \n If the flag is off, the
+ * the algorithm will be executed and if the flag to show results is on,
+ * the plot of the result will be shown in a new window.
+ *
+ * @param[in] configuration Struct with the parameters entered
+ * in terminal
+ */
 void callLiebmann(config& configuration) {
 
   ::anpi::Matrix<float> matrix;
@@ -207,10 +211,6 @@ void callLiebmann(config& configuration) {
       mostrarPerfil(matrix, min, max);
     }
   }
-
-
-  ::anpi::printMatrix(matrix);
-  writeFile(matrix);
 }
 
 void printConfig(config configuration) {
@@ -364,8 +364,7 @@ int main(int argc, char *argv[]) {
         throw po::error(
             "At least one border should be specified with the option \"-i\"");
 
-      if (!checkIsolatedBorders(isolate, configuration))
-        throw po::error("Unknown borders specified");
+      checkIsolatedBorders(isolate, configuration);
     }
 
     if (vm.count("horizontalPix")) {
