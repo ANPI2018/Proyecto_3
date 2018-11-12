@@ -140,31 +140,40 @@ int calculateTemperature(std::size_t value, std::size_t stepSize,
 template<class T> 
 std::vector<T> trazadores(std::vector<T> dataVector, std::size_t size) {
 
-	std::size_t stepSize = size/dataVector.size(); //The distance between the Xs.
+	std::size_t stepSize = size/(dataVector.size()-1); //The distance between the Xs.
 	std::size_t newSize = dataVector.size();
-	std::vector<T> solutionVector(newSize-2); //Until x3.
-	std::vector<T> secondDerivatesVector(newSize-2); //Without the first and last second derivates.
 	std::vector<T> secondDerivatesComplete(newSize); //[0,secondDerivatesVector,0]
-	anpi::Matrix<T> tridiagonalMatrix;
-	tridiagonalMatrix.allocate(newSize-1,newSize-1);
 
-
-	initialiceVector(solutionVector);
-	initialiceVector(secondDerivatesVector);
-	makeSolutionVector(dataVector, solutionVector, stepSize);
-	makeMatrix(tridiagonalMatrix, stepSize);
-
-	thomas(tridiagonalMatrix,secondDerivatesVector,solutionVector);
-
-	for (std::size_t i = 0 ; i < secondDerivatesComplete.size() ; ++i){ //Adds the first and second derivates. =0.
-		if (i == 0 || i == secondDerivatesComplete.size() -1)
-			secondDerivatesComplete[i] = 0;
-		else
-			secondDerivatesComplete[i] = secondDerivatesVector[i-1];
+	if(dataVector.size() == 3){
+		std::vector<T> secondDerivatesComplete(3);
+		secondDerivatesComplete[0] = 0;
+		secondDerivatesComplete[1] = stepSize;
+		secondDerivatesComplete[2] = 0;
 	}
+	else{
+		std::vector<T> solutionVector(newSize-2); //Until x3.
+		std::vector<T> secondDerivatesVector(newSize-2); //Without the first and last second derivates.
+		anpi::Matrix<T> tridiagonalMatrix;
+		tridiagonalMatrix.allocate(newSize-1,newSize-1);
+
+
+		initialiceVector(solutionVector);
+		initialiceVector(secondDerivatesVector);
+		makeSolutionVector(dataVector, solutionVector, stepSize);
+		makeMatrix(tridiagonalMatrix, stepSize);
+
+		thomas(tridiagonalMatrix,secondDerivatesVector,solutionVector);
+
+		for (std::size_t i = 0 ; i < secondDerivatesComplete.size() ; ++i){ //Adds the first and second derivates. =0.
+			if (i == 0 || i == secondDerivatesComplete.size() -1)
+				secondDerivatesComplete[i] = 0;
+			else
+				secondDerivatesComplete[i] = secondDerivatesVector[i-1];
+		}
+	}
+	
 	std::vector<T> finalTemperatureVector(size);
 	initialiceVector(finalTemperatureVector);
-	stepSize = size/(dataVector.size()-1);
 	for (unsigned int i = 0 ; i < size ; ++i)
 		finalTemperatureVector[i] = calculateTemperature(i,stepSize,secondDerivatesComplete, dataVector);
 	return finalTemperatureVector;
