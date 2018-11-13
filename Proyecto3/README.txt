@@ -90,14 +90,36 @@ Ejemplos:
   
   > ./proyecto3 -k 5 -h 512 -v 512 -d 20 50 30 -b 10 40 90 20 -m
   
+  > ./proyecto3 -k -h 1024 -v 1024 -p home/user/documents/profile.txt
   
-Nota:
+  
+Archivo con perfil térmico:
+
+  Las temperaturas en los bordes pueden especificarse tambien por medio
+  de un archivo de texto, que debe tener la siguiente estructura:
+  
+    <borde> = valor [valores*]
+    <borde> = valor [valores*]
+      
+  Ejemplo:
+    
+    top = 50
+    bottom = 30 40
+    left = 10
+    right = 10 30 50 70
+      
+  
+Notas:
   * Las opciones '-k', '-h' y '-v' son siempre requeridas para la ejecución
     del programa.
     
   * Si alguna de las temperaturas en los bordes no se especifica en terminal, ni
     por medio del archivo con perfil térmico, se consideran dichos bordes
     como aislados.
+    
+  * Si se especifica por medio de la terminal el perfil térmico de alguno
+    de los bordes dentro del archivo con perfil térmico, tendra prioridad lo especificado
+    por medio de la terminal.
     
   * Por defecto la opción '-q' se encuentra activa, por lo que siempre mostrara
     el gráfico de distribución de temperatura.
