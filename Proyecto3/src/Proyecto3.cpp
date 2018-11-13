@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("deactivateVisual")) {
-      configuration.show = 1;
+      configuration.show = 0;
     }
 
     if (vm.count("thermalFlow")) {
